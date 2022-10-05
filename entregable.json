@@ -1,0 +1,17 @@
+[
+	{
+		"title": "short",
+		"price": 2500,
+		"id": 1
+	},
+	{
+		"title": "remera",
+		"price": 3000,
+		"id": 2
+	},
+	{
+		"title": "pelota",
+		"price": 2200,
+		"id": 4
+	}
+]
