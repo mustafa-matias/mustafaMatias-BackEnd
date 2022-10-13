@@ -108,3 +108,35 @@ const productoNuevo = { title: "pelota", price: 2200 }
 // archivo1.getAll()
 // archivo1.deleteById(3)
 // archivo1.deleteAll()
+
+
+
+
+
+//Tp 3 - Servidor en EXPRESS.
+
+const express = require('express');
+
+const app = express();
+
+const PORT = 8080;
+
+const server = app.listen(PORT, () => {
+    console.log(`Servidor http escuchando en el puerto ${PORT}`);
+})
+
+server.on("error", error => console.log(`Error en servidor ${error}`));
+
+app.get('/productos', async (req, res) => {
+    const productos = await archivo1.getAll();
+    res.send(productos);
+})
+
+app.get('/productoRandom', async (req, res) => {
+    const data = await leerArchivo(archivo1.nombreArchivo);
+    const numeroRamdomMax = data.length;
+    const sorteo = (Math.round(Math.random() * (numeroRamdomMax - 1) + 1));
+    const producto = await archivo1.getById(sorteo);
+    res.send(producto);
+})
+
