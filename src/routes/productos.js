@@ -1,8 +1,11 @@
 const fs = require('fs');
+const { Router } = require('express');
+
+const rutaProductos = Router();
 
 const leerArchivo = async (nombre) => {
     try {
-        const lectura = await fs.promises.readFile(`./${nombre}`, 'utf-8');
+        const lectura = await fs.promises.readFile(`./src/${nombre}`, 'utf-8');
         const datos = JSON.parse(lectura)
         return datos;
     } catch (err) {
@@ -12,7 +15,7 @@ const leerArchivo = async (nombre) => {
 
 const crearArchivo = async (nombre, dato) => {
     try {
-        await fs.promises.writeFile(`./${nombre}`, dato, 'utf-8');
+        await fs.promises.writeFile(`./src/${nombre}`, dato, 'utf-8');
     } catch (err) {
         throw Error(err);
     }
@@ -101,38 +104,88 @@ class Contenedor {
     }
 }
 
-const archivo1 = new Contenedor('entregable.json');
-const productoNuevo = { title: "pelota", price: 2200 }
-// archivo1.save(productoNuevo)
-// archivo1.getById(2)
-// archivo1.getAll()
-// archivo1.deleteById(3)
-// archivo1.deleteAll()
+const archivo1 = new Contenedor('productos.json');
 
 
-
-
-
-//Tp 3 - Servidor en EXPRESS.
-
-const express = require('express');
-
-const app = express();
-
-const PORT = 8080;
-
-const server = app.listen(PORT, () => {
-    console.log(`Servidor http escuchando en el puerto ${PORT}`);
-})
-
-server.on("error", error => console.log(`Error en servidor ${error}`));
-
-app.get('/productos', async (req, res) => {
+rutaProductos.get('/', async (req, res) => {
     const productos = await archivo1.getAll();
-    res.send(productos);
+    res.json({
+        data: productos
+    });
 })
 
-app.get('/productoRandom', async (req, res) => {
+rutaProductos.get('/:id', async (req, res) => {
+    const id = JSON.parse(req.params.id);
+    const productoId = await archivo1.getById(id);
+    if (!productoId) {
+        return res.status(400).json({
+            msg: `No existe producto id: ${id}`
+        })
+    }
+    res.json({
+        data: productoId
+    })
+})
+
+rutaProductos.post('/', async (req, res) => {
+    const data = req.body;
+    const { title, price } = req.body;
+    if (!title || !price) {
+        return res.status(400).json({
+            msg: "campos inválidos"
+        })
+    }
+    const nuevoProducto = {
+        title,
+        price
+    }
+    await archivo1.save(nuevoProducto);
+    res.json({
+        msg: "ok",
+        data: nuevoProducto
+    })
+})
+
+rutaProductos.put('/:id', async (req, res) => {
+    const productos = await leerArchivo("entregable.json");
+    const id = JSON.parse(req.params.id);
+    const productoId = await archivo1.getById(id);
+    if (!productoId) {
+        return res.status(400).json({
+            msg: `No existe producto id: ${id}`
+        })
+    }
+    const data = req.body;
+    const { title, price } = req.body;
+    if (!title || !price) {
+        return res.status(400).json({
+            msg: "campos inválidos"
+        })
+    }
+    const productoActualizado = {
+        title,
+        price,
+        id: id
+    }
+    const indice = productos.findIndex(producto => producto.id == id);
+    productos.splice(indice, 1, productoActualizado);
+    archivo1.deleteAll()
+    archivo1.save(productos);
+    res.json({
+        msg: `Se modifico el producto id: ${id}`,
+        data: productoActualizado
+    })
+})
+
+rutaProductos.delete('/:id', async (req, res) => {
+    const id = JSON.parse(req.params.id);
+    const productoId = await archivo1.deleteById(id);
+    res.json({
+        msg: `Se borró el producto id: ${id}`
+    })
+})
+
+rutaProductos.get('/productoRandom', async (req, res) => {
     const data = await leerArchivo(archivo1.nombreArchivo);
     const numeroRamdomMax = data.length;
     const sorteo = (Math.round(Math.random() * (numeroRamdomMax - 1) + 1));
@@ -140,3 +193,4 @@ app.get('/productoRandom', async (req, res) => {
     res.send(producto);
 })
 
+module.exports = rutaProductos;
