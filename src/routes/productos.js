@@ -1,25 +1,12 @@
 const fs = require('fs');
-const { Router } = require('express');
+const express = require('express');
+const path = require('path');
+const rutaProductos = express();
+rutaProductos.use(express.static('public'));
 
-const rutaProductos = Router();
-
-const leerArchivo = async (nombre) => {
-    try {
-        const lectura = await fs.promises.readFile(`./src/${nombre}`, 'utf-8');
-        const datos = JSON.parse(lectura)
-        return datos;
-    } catch (err) {
-        throw Error(err);
-    }
-}
-
-const crearArchivo = async (nombre, dato) => {
-    try {
-        await fs.promises.writeFile(`./src/${nombre}`, dato, 'utf-8');
-    } catch (err) {
-        throw Error(err);
-    }
-}
+const viewsFolderPath = path.resolve(__dirname, '../../views');
+rutaProductos.set('view engine', 'ejs');
+rutaProductos.set('views', viewsFolderPath);
 
 class Contenedor {
     constructor(nombreArchivo) {
@@ -104,14 +91,28 @@ class Contenedor {
     }
 }
 
-const archivo1 = new Contenedor('productos.json');
+const leerArchivo = async (nombre) => {
+    try {
+        const lectura = await fs.promises.readFile(`./src/${nombre}`, 'utf-8');
+        const datos = JSON.parse(lectura)
+        return datos;
+    } catch (err) {
+        throw Error(err);
+    }
+}
 
+const crearArchivo = async (nombre, dato) => {
+    try {
+        await fs.promises.writeFile(`./src/${nombre}`, dato, 'utf-8');
+    } catch (err) {
+        throw Error(err);
+    }
+}
+const archivo1 = new Contenedor('productos.json');
 
 rutaProductos.get('/', async (req, res) => {
     const productos = await archivo1.getAll();
-    res.json({
-        data: productos
-    });
+    res.render('productos', { data: productos })
 })
 
 rutaProductos.get('/:id', async (req, res) => {
@@ -140,14 +141,11 @@ rutaProductos.post('/', async (req, res) => {
         price
     }
     await archivo1.save(nuevoProducto);
-    res.json({
-        msg: "ok",
-        data: nuevoProducto
-    })
+    res.redirect('/api');
 })
 
 rutaProductos.put('/:id', async (req, res) => {
-    const productos = await leerArchivo("entregable.json");
+    const productos = await leerArchivo("productos.json");
     const id = JSON.parse(req.params.id);
     const productoId = await archivo1.getById(id);
     if (!productoId) {
